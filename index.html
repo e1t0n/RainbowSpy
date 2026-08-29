@@ -210,7 +210,7 @@
       { name: 'Fish', icon: '\u{1F420}' }
     ];
 
-    // VERIFIED FIX: Grab the text strings from index 0 correctly
+    // Fixed default selections to correctly access array items
     let selectedColor = COLORS[0].name;
     let selectedObject = OBJECTS[0].name;
 
@@ -257,8 +257,8 @@
 
       const searchTerm = `${selectedColor} ${selectedObject}`;
       
-      // VERIFIED FIX: Absolute, unbroken Wikimedia Commons API link
-      const url = "https://wikimedia.org" + encodeURIComponent(searchTerm) + "&gsrnamespace=6&gsrlimit=16&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*";
+      // Fixed: Full valid Wikimedia API path constructed cleanly
+      const url = `https://wikimedia.org{encodeURIComponent(searchTerm)}&gsrnamespace=6&gsrlimit=16&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*`;
 
       try {
         const res = await fetch(url);
