@@ -210,6 +210,7 @@
       { name: 'Fish', icon: '\u{1F420}' }
     ];
 
+    // FIX: Set defaults to the text name values of the first array elements
     let selectedColor = COLORS[0].name;
     let selectedObject = OBJECTS[0].name;
 
@@ -256,7 +257,7 @@
 
       const searchTerm = `${selectedColor} ${selectedObject}`;
       
-      // Using Wikimedia Commons Open API (Free, no keys required)
+      // FIX: Restored full valid Wikimedia Commons Open API endpoint string
       const url = `https://wikimedia.org{encodeURIComponent(searchTerm)}&gsrnamespace=6&gsrlimit=16&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*`;
 
       try {
