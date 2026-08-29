@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kids Color & Object Finder</title>
+  <style>
+
+◦ {.
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 12px;
+      background-color: #f8fafc;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* Fixed top container for smooth horizontal scrolling */
+    .controls-wrapper {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      padding-bottom: 8px;
+      z-index: 10;
+    }
+
+    /* Horizontal scrolling tracks */
+    .scroll-row {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 6px 2px;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+    .scroll-row::-webkit-scrollbar {
+      display: none; /* Chrome/Safari */
+    }
+
+    /* Base Chip Styles */
+    .chip {
+      flex: 0 0 auto;
+      padding: 10px 18px;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: 3px solid transparent;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip:active {
+      transform: scale(0.92);
+    }
+
+    /* Color Chips */
+    .color-chip {
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .color-chip.selected {
+      border-color: #0f172a;
+      transform: scale(1.05);
+    }
+
+    /* Object Chips */
+    .object-chip {
+      background: #ffffff;
+      color: #334155;
+      border: 2px solid #e2e8f0;
+    }
+    .object-chip.selected {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+      transform: scale(1.05);
+    }
+
+    /* Results Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    @media (min-width: 600px) {
+      .grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 14px;
+      }
+    }
+
+    .grid img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 18px;
+      background: #e2e8f0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* Status indicator */
+    .status {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 1.2rem;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="controls-wrapper">
+    <div class="scroll-row" id="color-row"></div>
+
+    <div class="scroll-row" id="object-row"></div>
+  </div>
+
+  <div class="grid" id="results"></div>
+  <div class="status" id="status"></div>
+
+  <script>
+    const COLORS = [
+      { name: 'Red', hex: '#ef4444' },
+      { name: 'Blue', hex: '#3b82f6' },
+      { name: 'Green', hex: '#22c55e' },
+      { name: 'Yellow', hex: '#eab308' },
+      { name: 'Purple', hex: '#a855f7' },
+      { name: 'Pink', hex: '#ec4899' },
+      { name: 'Orange', hex: '#f97316' },
+      { name: 'Black', hex: '#1e293b' },
+      { name: 'White', hex: '#94a3b8' }
+    ];
+
+    const OBJECTS = [
+      { name: 'Gems', icon: ':gem:' },
+      { name: 'Stones', icon: ':rock:' },
+      { name: 'Ice cream', icon: ':icecream:' },
+      { name: 'Cars', icon: ':car:' },
+      { name: 'Flowers', icon: ':cherry_blossom:' },
+      { name: 'Butterflies', icon: ':butterfly:' },
+      { name: 'Balloons', icon: ':balloon:' },
+      { name: 'Birds', icon: ':parrot:' },
+      { name: 'Fish', icon: ':tropical_fish:' }
+    ];
+
+    let selectedColor = COLORS[0].name;
+    let selectedObject = OBJECTS[0].name;
+
+    function initControls() {
+      const colorContainer = document.getElementById('color-row');
+      colorContainer.innerHTML = COLORS.map(c => `
+        <button 
+          class="chip color-chip ${c.name === selectedColor ? 'selected' : ''}" 
+          style="background-color: ${c.hex}" 
+          onclick="pickColor('${c.name}')"
+        >
+          ${c.name}
+        </button>
+      `).join('');
+
+      const objectContainer = document.getElementById('object-row');
+      objectContainer.innerHTML = OBJECTS.map(o => `
+        <button 
+          class="chip object-chip ${o.name === selectedObject ? 'selected' : ''}" 
+          onclick="pickObject('${o.name}')"
+        >
+          <span>${o.icon}</span> <span>${o.name}</span>
+        </button>
+      `).join('');
+    }
+
+    function pickColor(color) {
+      selectedColor = color;
+      initControls();
+      loadImages();
+    }
+
+    function pickObject(object) {
+      selectedObject = object;
+      initControls();
+      loadImages();
+    }
+
+    async function loadImages() {
+      const grid = document.getElementById('results');
+      const status = document.getElementById('status');
+      grid.innerHTML = '';
+      status.textContent = ':sparkles: Finding pictures...';
+
+      const searchTerm = `${selectedColor} ${selectedObject}`;
+      
+      // Using Wikimedia Commons Open API (Free, no keys required)
+      const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(searchTerm)}&gsrnamespace=6&gsrlimit=16&prop=imageinfo&iiprop=url&iiurlwidth=400&format=json&origin=*`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        status.textContent = '';
+        if (!data.query || !data.query.pages) {
+          status.textContent = 'No photos found! Try another combination.';
+          return;
+        }
+
+        const pages = Object.values(data.query.pages);
+        grid.innerHTML = pages
+          .filter(page => page.imageinfo && page.imageinfo[0]?.thumburl)
+          .map(page => `<img src="${page.imageinfo[0].thumburl}" loading="lazy" alt="${searchTerm}">`)
+          .join('');
+      } catch (err) {
+        status.textContent = 'Could not load images. Please check your connection.';
+      }
+    }
+
+    // Initial load
+    initControls();
+    loadImages();
+  </script>
+</body>
+</html>
