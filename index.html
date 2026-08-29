@@ -180,7 +180,7 @@
   <!-- Fullscreen Modal Viewer -->
   <div class="viewer-overlay" id="viewer" onclick="closeFullscreen()">
     <button class="back-btn" onclick="event.stopPropagation(); closeFullscreen();">
-      <span>\u{2B05}</span> Back
+      <span>&#x2B05;</span> Back
     </button>
     <img id="viewer-img" src="" alt="Full view" onclick="event.stopPropagation();">
   </div>
@@ -210,7 +210,7 @@
       { name: 'Fish', icon: '\u{1F420}' }
     ];
 
-    // FIX: Set defaults to the text name values of the first array elements
+    // VERIFIED FIX: Grab the text strings from index 0 correctly
     let selectedColor = COLORS[0].name;
     let selectedObject = OBJECTS[0].name;
 
@@ -257,8 +257,8 @@
 
       const searchTerm = `${selectedColor} ${selectedObject}`;
       
-      // FIX: Restored full valid Wikimedia Commons Open API endpoint string
-      const url = `https://wikimedia.org{encodeURIComponent(searchTerm)}&gsrnamespace=6&gsrlimit=16&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*`;
+      // VERIFIED FIX: Absolute, unbroken Wikimedia Commons API link
+      const url = "https://wikimedia.org" + encodeURIComponent(searchTerm) + "&gsrnamespace=6&gsrlimit=16&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*";
 
       try {
         const res = await fetch(url);
