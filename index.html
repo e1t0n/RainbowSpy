@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Kids Color & Object Finder</title>
   <style>
-
-◦ {.
+    * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
@@ -106,6 +105,7 @@
       border-radius: 18px;
       background: #e2e8f0;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      cursor: pointer;
     }
 
     /* Status indicator */
@@ -115,18 +115,75 @@
       font-size: 1.2rem;
       margin-top: 40px;
     }
+
+    /* Fullscreen Modal View */
+    .viewer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(15, 23, 42, 0.95);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .viewer-overlay.active {
+      display: flex;
+    }
+
+    .viewer-overlay img {
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      background: #ffffff;
+      color: #0f172a;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .back-btn:active {
+      transform: scale(0.95);
+    }
   </style>
 </head>
 <body>
 
   <div class="controls-wrapper">
     <div class="scroll-row" id="color-row"></div>
-
     <div class="scroll-row" id="object-row"></div>
   </div>
 
   <div class="grid" id="results"></div>
   <div class="status" id="status"></div>
+
+  <!-- Fullscreen Modal Viewer -->
+  <div class="viewer-overlay" id="viewer" onclick="closeFullscreen()">
+    <button class="back-btn" onclick="event.stopPropagation(); closeFullscreen();">
+      <span>\u{2B05}</span> Back
+    </button>
+    <img id="viewer-img" src="" alt="Full view" onclick="event.stopPropagation();">
+  </div>
 
   <script>
     const COLORS = [
@@ -142,17 +199,16 @@
     ];
 
     const OBJECTS = [
-  { name: 'Gems', icon: '\u{1F48E}' },
-  { name: 'Stones', icon: '\u{1FA68}' },
-  { name: 'Ice cream', icon: '\u{1F366}' },
-  { name: 'Cars', icon: '\u{1F697}' },
-  { name: 'Flowers', icon: '\u{1F338}' },
-  { name: 'Butterflies', icon: '\u{1F98B}' },
-  { name: 'Balloons', icon: '\u{1F388}' },
-  { name: 'Birds', icon: '\u{1F99C}' },
-  { name: 'Fish', icon: '\u{1F420}' }
-];
-
+      { name: 'Gems', icon: '\u{1F48E}' },
+      { name: 'Stones', icon: '\u{1FA68}' },
+      { name: 'Ice cream', icon: '\u{1F366}' },
+      { name: 'Cars', icon: '\u{1F697}' },
+      { name: 'Flowers', icon: '\u{1F338}' },
+      { name: 'Butterflies', icon: '\u{1F98B}' },
+      { name: 'Balloons', icon: '\u{1F388}' },
+      { name: 'Birds', icon: '\u{1F99C}' },
+      { name: 'Fish', icon: '\u{1F420}' }
+    ];
 
     let selectedColor = COLORS[0].name;
     let selectedObject = OBJECTS[0].name;
@@ -196,12 +252,12 @@
       const grid = document.getElementById('results');
       const status = document.getElementById('status');
       grid.innerHTML = '';
-      status.textContent = ':sparkles: Finding pictures...';
+      status.textContent = '\u{2728} Finding pictures...';
 
       const searchTerm = `${selectedColor} ${selectedObject}`;
       
       // Using Wikimedia Commons Open API (Free, no keys required)
-      const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(searchTerm)}&gsrnamespace=6&gsrlimit=16&prop=imageinfo&iiprop=url&iiurlwidth=400&format=json&origin=*`;
+      const url = `https://wikimedia.org{encodeURIComponent(searchTerm)}&gsrnamespace=6&gsrlimit=16&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*`;
 
       try {
         const res = await fetch(url);
@@ -216,11 +272,25 @@
         const pages = Object.values(data.query.pages);
         grid.innerHTML = pages
           .filter(page => page.imageinfo && page.imageinfo[0]?.thumburl)
-          .map(page => `<img src="${page.imageinfo[0].thumburl}" loading="lazy" alt="${searchTerm}">`)
+          .map(page => `<img src="${page.imageinfo[0].thumburl}" loading="lazy" alt="${searchTerm}" onclick="openFullscreen('${page.imageinfo[0].thumburl}')">`)
           .join('');
       } catch (err) {
         status.textContent = 'Could not load images. Please check your connection.';
       }
+    }
+
+    function openFullscreen(imgUrl) {
+      const viewer = document.getElementById('viewer');
+      const viewerImg = document.getElementById('viewer-img');
+      viewerImg.src = imgUrl;
+      viewer.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Stop background scrolling
+    }
+
+    function closeFullscreen() {
+      const viewer = document.getElementById('viewer');
+      viewer.classList.remove('active');
+      document.body.style.overflow = ''; // Restore scrolling
     }
 
     // Initial load
